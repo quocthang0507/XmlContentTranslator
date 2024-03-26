@@ -291,10 +291,7 @@ namespace XmlContentTranslator.Translator
                 }
             }
 
-            if (results.Count == paragraphs.Count)
-                return results;
-
-            return input;
+            return results.Count == paragraphs.Count ? results : input;
         }
 
     }

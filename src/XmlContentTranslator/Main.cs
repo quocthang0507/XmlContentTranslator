@@ -10,6 +10,7 @@ using System.Web;
 using System.Windows.Forms;
 using System.Xml;
 using XmlContentTranslator.Translator;
+using ComboBox = System.Windows.Forms.ComboBox;
 
 namespace XmlContentTranslator
 {
@@ -37,12 +38,29 @@ namespace XmlContentTranslator
             }
         }
 
+        public enum Mode
+        {
+            TagName,
+            TagAttribute
+        }
+
         private Hashtable _treeNodesHashtable = new Hashtable();
         private Hashtable _listViewItemHashtable = new Hashtable();
         private XmlDocument _originalDocument;
         private string _secondLanguageFileName;
         private bool _change;
         private Find _formFind;
+        private Mode _selectedMode = Mode.TagName;
+
+        private string GetNodeText(XmlNode node, string attribute = "name")
+        {
+            if (_selectedMode == Mode.TagName || node.Attributes == null)
+                return node.Name;
+            var attr = node.Attributes[attribute];
+            if (attr != null)
+                return attr.Value.ToString();
+            return string.Empty;
+        }
 
         public Main()
         {
@@ -52,6 +70,8 @@ namespace XmlContentTranslator
 
             FillComboWithLanguages(comboBoxFrom);
             FillComboWithLanguages(comboBoxTo);
+
+            comboBoxMode.SelectedIndex = 1;
         }
 
         private void listViewLanguageTags_ColumnClick(object sender, ColumnClickEventArgs e)
@@ -143,7 +163,10 @@ namespace XmlContentTranslator
 
         private bool OpenFirstXmlDocument(XmlDocument doc)
         {
-            listViewLanguageTags.Columns.Add("Tag", 150);
+            if (_selectedMode == Mode.TagName)
+                listViewLanguageTags.Columns.Add("Tag", 150);
+            else
+                listViewLanguageTags.Columns.Add("Key", 150);
             TryGetLanguageNameAttribute(doc, comboBoxFrom);
 
             AddAttributes(doc.DocumentElement);
@@ -153,7 +176,7 @@ namespace XmlContentTranslator
                 {
                     if (childNode.NodeType != XmlNodeType.Attribute)
                     {
-                        var treeNode = new TreeNode(childNode.Name);
+                        var treeNode = new TreeNode(GetNodeText(childNode));
                         treeNode.Tag = childNode;
                         treeView1.Nodes.Add(treeNode);
                         if (childNode.ChildNodes.Count > 0 && !XmlUtils.IsTextNode(childNode))
@@ -287,12 +310,12 @@ namespace XmlContentTranslator
             }
             else
             {
-                string language = "Language1";
+                string language = "Source";
                 if (cb.Name == "comboBoxTo")
                 {
-                    language = "Language2";
+                    language = "Destination";
                 }
-                listViewLanguageTags.Columns.Add(language, 200);
+                listViewLanguageTags.Columns.Add(language, 400);
             }
             SetLanguage(cb, doc);
         }
@@ -320,20 +343,19 @@ namespace XmlContentTranslator
                 ListViewItem item;
                 if (node.NodeType == XmlNodeType.Attribute)
                 {
-                    item = new ListViewItem("@" + node.Name);
+                    item = new ListViewItem("@" + GetNodeText(node));
                     item.SubItems.Add(node.InnerText);
                 }
                 else if (XmlUtils.ContainsText(node))
                 {
-                    item = new ListViewItem(node.Name);
+                    item = new ListViewItem(GetNodeText(node));
                     item.SubItems.Add(node.InnerXml);
                 }
                 else
                 {
-                    item = new ListViewItem(node.Name);
+                    item = new ListViewItem(GetNodeText(node));
                     item.SubItems.Add(node.InnerText);
                 }
-
 
                 item.Tag = node;
                 listViewLanguageTags.Items.Add(item);
@@ -345,9 +367,14 @@ namespace XmlContentTranslator
             {
                 if (_listViewItemHashtable[XmlUtils.BuildNodePath(node)] is ListViewItem item && item.SubItems.Count < 4096)
                 {
-                    item.SubItems.Add(XmlUtils.ContainsText(node) ? node.InnerXml : node.InnerText);
+                    AddSecondData(ref item, node);
                 }
             }
+        }
+
+        private void AddSecondData(ref ListViewItem item, XmlNode node)
+        {
+            item.SubItems.Add(XmlUtils.ContainsText(node) ? node.InnerXml : node.InnerText);
         }
 
         private void MakeNew()
@@ -371,7 +398,7 @@ namespace XmlContentTranslator
                 AddAttributes(node);
                 foreach (XmlNode childNode in node.ChildNodes)
                 {
-                    var treeNode = new TreeNode(childNode.Name);
+                    var treeNode = new TreeNode(GetNodeText(childNode));
                     treeNode.Tag = childNode;
                     if (parentNode == null)
                     {
@@ -470,22 +497,19 @@ namespace XmlContentTranslator
         {
             if (listViewLanguageTags.SelectedItems.Count == 1 && listViewLanguageTags.SelectedItems[0].SubItems.Count > 2)
             {
-                textBoxCurrentText.Enabled = true;
-                textBoxCurrentText.Text = listViewLanguageTags.SelectedItems[0].SubItems[2].Text;
+                textBoxDestination.Enabled = true;
+                textBoxDestination.Text = listViewLanguageTags.SelectedItems[0].SubItems[2].Text;
+                textBoxSource.Text = listViewLanguageTags.SelectedItems[0].SubItems[1].Text;
 
-                if (listViewLanguageTags.SelectedItems[0].Tag is XmlNode node)
-                {
-                    toolStripStatusLabel2.Text = $"{XmlUtils.BuildNodePath(node).Replace("#document/", "")}     {listViewLanguageTags.SelectedItems[0].Index + 1} / {listViewLanguageTags.Items.Count}";
-                }
-                else
-                {
-                    toolStripStatusLabel2.Text = $"{listViewLanguageTags.SelectedItems[0].Index + 1} / {listViewLanguageTags.Items.Count}";
-                }
+                toolStripStatusLabel2.Text = listViewLanguageTags.SelectedItems[0].Tag is XmlNode node
+                    ? $"{XmlUtils.BuildNodePath(node).Replace("#document/", "")}     {listViewLanguageTags.SelectedItems[0].Index + 1} / {listViewLanguageTags.Items.Count}"
+                    : $"{listViewLanguageTags.SelectedItems[0].Index + 1} / {listViewLanguageTags.Items.Count}";
             }
             else
             {
-                textBoxCurrentText.Text = string.Empty;
-                textBoxCurrentText.Enabled = false;
+                textBoxDestination.Text = string.Empty;
+                textBoxSource.Text = string.Empty;
+                textBoxDestination.Enabled = false;
                 toolStripStatusLabel2.Text = $"{listViewLanguageTags.SelectedItems.Count} items selected";
             }
             HighLightLinesWithSameText();
@@ -495,7 +519,7 @@ namespace XmlContentTranslator
         {
             if (listViewLanguageTags.SelectedItems.Count == 1)
             {
-                listViewLanguageTags.SelectedItems[0].SubItems[2].Text = textBoxCurrentText.Text;
+                listViewLanguageTags.SelectedItems[0].SubItems[2].Text = textBoxDestination.Text;
             }
         }
 
@@ -592,7 +616,7 @@ namespace XmlContentTranslator
 
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                ActiveControl = textBoxCurrentText;
+                ActiveControl = textBoxDestination;
             }
             else if (e.Control && e.KeyCode == Keys.Up)
             {
@@ -608,7 +632,7 @@ namespace XmlContentTranslator
                 }
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                ActiveControl = textBoxCurrentText;
+                ActiveControl = textBoxDestination;
             }
             else if (e.KeyCode == Keys.F6)
             {
@@ -783,10 +807,7 @@ namespace XmlContentTranslator
             }
             else
             {
-                if (translated == 1)
-                    toolStripStatusLabel1.Text = "One line translated";
-                else
-                    toolStripStatusLabel1.Text = translated + " lines translated";
+                toolStripStatusLabel1.Text = translated == 1 ? "One line translated" : translated + " lines translated";
                 if (skipped > 0)
                     toolStripStatusLabel1.Text += ", " + skipped + " line(s) skipped";
             }
@@ -817,14 +838,9 @@ namespace XmlContentTranslator
                 _change = true;
             }
 
-            if (transferred == 1)
-            {
-                toolStripStatusLabel1.Text = "One line transfered from master: '" + oldText + "' => '" + newText + "'";
-            }
-            else
-            {
-                toolStripStatusLabel1.Text = transferred + " line(s) transfered from master";
-            }
+            toolStripStatusLabel1.Text = transferred == 1
+                ? "One line transfered from master: '" + oldText + "' => '" + newText + "'"
+                : transferred + " line(s) transfered from master";
 
             ListViewLanguageTagsSelectedIndexChanged(null, null);
         }
@@ -1160,6 +1176,12 @@ namespace XmlContentTranslator
 
                 listViewLanguageTags.Columns[listViewLanguageTags.Columns.Count - 1].Width = listViewLanguageTags.Width - 25 - w;
             }
+        }
+
+        private void comboBoxMode_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ComboBox comboBox = (ComboBox)sender;
+            _selectedMode = (Mode)comboBox.SelectedIndex;
         }
     }
 }

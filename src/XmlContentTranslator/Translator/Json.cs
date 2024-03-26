@@ -3,7 +3,7 @@ using System.Text;
 
 namespace XmlContentTranslator.Translator
 {
-    public class Json 
+    public class Json
     {
         public static string EncodeJsonText(string text)
         {

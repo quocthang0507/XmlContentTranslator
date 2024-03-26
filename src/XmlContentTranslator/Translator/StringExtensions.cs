@@ -8,9 +8,7 @@ namespace XmlContentTranslator.Translator
     {
         public static bool LineStartsWithHtmlTag(this string text, bool threeLengthTag, bool includeFont = false)
         {
-            if (text == null || (!threeLengthTag && !includeFont))
-                return false;
-            return StartsWithHtmlTag(text, threeLengthTag, includeFont);
+            return text != null && (threeLengthTag || includeFont) && StartsWithHtmlTag(text, threeLengthTag, includeFont);
         }
 
         public static bool LineEndsWithHtmlTag(this string text, bool threeLengthTag, bool includeFont = false)
@@ -23,11 +21,8 @@ namespace XmlContentTranslator.Translator
                 return false;
 
             // </font> </i>
-            if (threeLengthTag && len > 3 && text[len - 4] == '<' && text[len - 3] == '/')
-                return true;
-            if (includeFont && len > 8 && text[len - 7] == '<' && text[len - 6] == '/')
-                return true;
-            return false;
+            return threeLengthTag && len > 3 && text[len - 4] == '<' && text[len - 3] == '/'
+|| includeFont && len > 8 && text[len - 7] == '<' && text[len - 6] == '/';
         }
 
         public static bool LineBreakStartsWithHtmlTag(this string text, bool threeLengthTag, bool includeFont = false)

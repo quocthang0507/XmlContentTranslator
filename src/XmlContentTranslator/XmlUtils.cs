@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using System.Xml;
 
 namespace XmlContentTranslator
@@ -25,12 +22,7 @@ namespace XmlContentTranslator
 
         public static bool IsTextNode(XmlNode node)
         {
-            if (node.ChildNodes.Count == 1 && node.ChildNodes[0].NodeType == XmlNodeType.Text)
-            {
-                return true;
-            }
-
-            return ContainsText(node);
+            return node.ChildNodes.Count == 1 && node.ChildNodes[0].NodeType == XmlNodeType.Text || ContainsText(node);
         }
 
         public static string BuildNodePath(XmlNode node)
@@ -71,9 +63,7 @@ namespace XmlContentTranslator
                     break;
                 i++;
             }
-            if (i == 0 || nameCount < 2)
-                return string.Empty;
-            return string.Format("[{0}]", i);
+            return i == 0 || nameCount < 2 ? string.Empty : string.Format("[{0}]", i);
         }
 
         public static string GetNodeIndex(XmlNode node)
@@ -105,9 +95,7 @@ namespace XmlContentTranslator
                 }
             }
 
-            if (i == 0)
-                return string.Empty;
-            return string.Format("[{0}]", i);
+            return i == 0 ? string.Empty : string.Format("[{0}]", i);
         }
 
         public static bool IsParentElement(XmlNode xnode)

@@ -186,9 +186,8 @@ namespace XmlContentTranslator.Translator
 
         public static bool IsBetweenNumbers(string s, int position)
         {
-            if (string.IsNullOrEmpty(s) || position < 1 || position + 2 > s.Length)
-                return false;
-            return char.IsDigit(s[position - 1]) && char.IsDigit(s[position + 1]);
+            return !string.IsNullOrEmpty(s) && position >= 1 && position + 2 <= s.Length
+&& char.IsDigit(s[position - 1]) && char.IsDigit(s[position + 1]);
         }
 
         public static string RemoveSpaceBeforeAfterTag(string text, string openTag)
@@ -289,10 +288,7 @@ namespace XmlContentTranslator.Translator
 
             // Some words we don't like breaking after
             string s2 = s.Substring(0, index);
-            if (s2.EndsWith("? -", StringComparison.Ordinal) || s2.EndsWith("! -", StringComparison.Ordinal) || s2.EndsWith(". -", StringComparison.Ordinal))
-                return false;
-
-            return true;
+            return !s2.EndsWith("? -", StringComparison.Ordinal) && !s2.EndsWith("! -", StringComparison.Ordinal) && !s2.EndsWith(". -", StringComparison.Ordinal);
         }
 
         public static string AutoBreakLineMoreThanTwoLines(string text, int maximumLineLength, string language)
@@ -669,14 +665,8 @@ namespace XmlContentTranslator.Translator
 
         private static bool IsPartOfNumber(string s, int position)
         {
-            if (string.IsNullOrWhiteSpace(s) || position + 1 >= s.Length)
-                return false;
-
-            if (position > 0 && Contains(@",.", s[position]))
-            {
-                return char.IsDigit(s[position - 1]) && char.IsDigit(s[position + 1]);
-            }
-            return false;
+            return !string.IsNullOrWhiteSpace(s) && position + 1 < s.Length
+&& position > 0 && Contains(@",.", s[position]) && char.IsDigit(s[position - 1]) && char.IsDigit(s[position + 1]);
         }
 
     }

@@ -119,9 +119,7 @@ namespace XmlContentTranslator.Translator
 
         public string Rebreak(string text)
         {
-            if (NumberOfLines == 1)
-                return text;
-            return Utilities.AutoBreakLine(text);
+            return NumberOfLines == 1 ? text : Utilities.AutoBreakLine(text);
         }
 
     }

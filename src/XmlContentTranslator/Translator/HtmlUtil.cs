@@ -376,15 +376,10 @@ namespace XmlContentTranslator.Translator
                 return false;
 
             var allLower = text.ToLower();
-            if (allLower.StartsWith("http://", StringComparison.Ordinal) || allLower.StartsWith("https://", StringComparison.Ordinal) ||
+            return allLower.StartsWith("http://", StringComparison.Ordinal) || allLower.StartsWith("https://", StringComparison.Ordinal) ||
                 allLower.StartsWith("www.", StringComparison.Ordinal) || allLower.EndsWith(".org", StringComparison.Ordinal) ||
-                allLower.EndsWith(".com", StringComparison.Ordinal) || allLower.EndsWith(".net", StringComparison.Ordinal))
-                return true;
-
-            if (allLower.Contains(".org/") || allLower.Contains(".com/") || allLower.Contains(".net/"))
-                return true;
-
-            return false;
+                allLower.EndsWith(".com", StringComparison.Ordinal) || allLower.EndsWith(".net", StringComparison.Ordinal)
+|| allLower.Contains(".org/") || allLower.Contains(".com/") || allLower.Contains(".net/");
         }
 
         public static bool StartsWithUrl(string text)
@@ -393,10 +388,7 @@ namespace XmlContentTranslator.Translator
                 return false;
 
             var arr = text.Trim().TrimEnd('.').TrimEnd().Split();
-            if (arr.Length == 0)
-                return false;
-
-            return IsUrl(arr[0]);
+            return arr.Length != 0 && IsUrl(arr[0]);
         }
 
         private static readonly string[] UppercaseTags = { "<I>", "<U>", "<B>", "<FONT", "</I>", "</U>", "</B>", "</FONT>" };
@@ -484,24 +476,20 @@ namespace XmlContentTranslator.Translator
                     int firstIndex = text.IndexOf(beginTag, StringComparison.Ordinal);
                     int lastIndex = text.LastIndexOf(beginTag, StringComparison.Ordinal);
                     int lastIndexWithNewLine = text.LastIndexOf(Environment.NewLine + beginTag, StringComparison.Ordinal) + Environment.NewLine.Length;
-                    if (noOfLines == 2 && lastIndex == lastIndexWithNewLine && firstIndex < 2)
-                        text = text.Replace(Environment.NewLine, endTag + Environment.NewLine) + endTag;
-                    else
-                        text = text.Remove(lastIndex, beginTag.Length).Insert(lastIndex, endTag);
+                    text = noOfLines == 2 && lastIndex == lastIndexWithNewLine && firstIndex < 2
+                        ? text.Replace(Environment.NewLine, endTag + Environment.NewLine) + endTag
+                        : text.Remove(lastIndex, beginTag.Length).Insert(lastIndex, endTag);
                 }
 
                 if (italicBeginTagCount == 1 && italicEndTagCount == 2)
                 {
                     int firstIndex = text.IndexOf(endTag, StringComparison.Ordinal);
-                    if (text.StartsWith("</i>-<i>-", StringComparison.Ordinal) ||
+                    text = text.StartsWith("</i>-<i>-", StringComparison.Ordinal) ||
                         text.StartsWith("</i>- <i>-", StringComparison.Ordinal) ||
                         text.StartsWith("</i>- <i> -", StringComparison.Ordinal) ||
-                        text.StartsWith("</i>-<i> -", StringComparison.Ordinal))
-                        text = text.Remove(0, 5);
-                    else if (firstIndex == 0)
-                        text = text.Remove(0, 4);
-                    else
-                        text = text.Substring(0, firstIndex) + text.Substring(firstIndex + endTag.Length);
+                        text.StartsWith("</i>-<i> -", StringComparison.Ordinal)
+                        ? text.Remove(0, 5)
+                        : firstIndex == 0 ? text.Remove(0, 4) : text.Substring(0, firstIndex) + text.Substring(firstIndex + endTag.Length);
                 }
 
                 if (italicBeginTagCount == 2 && italicEndTagCount == 1)
@@ -515,10 +503,9 @@ namespace XmlContentTranslator.Translator
                     else
                     {
                         int lastIndex = text.LastIndexOf(beginTag, StringComparison.Ordinal);
-                        if (text.Length > lastIndex + endTag.Length)
-                            text = text.Substring(0, lastIndex) + text.Substring(lastIndex - 1 + endTag.Length);
-                        else
-                            text = text.Substring(0, lastIndex - 1) + endTag;
+                        text = text.Length > lastIndex + endTag.Length
+                            ? text.Substring(0, lastIndex) + text.Substring(lastIndex - 1 + endTag.Length)
+                            : text.Substring(0, lastIndex - 1) + endTag;
                     }
                     if (text.StartsWith(beginTag, StringComparison.Ordinal) && text.EndsWith(endTag, StringComparison.Ordinal) && text.Contains(endTag + Environment.NewLine + beginTag))
                     {
@@ -707,14 +694,9 @@ namespace XmlContentTranslator.Translator
             else
             {
                 int indexOfEndBracket = text.IndexOf('}');
-                if (text.StartsWith("{\\", StringComparison.Ordinal) && indexOfEndBracket > 1 && indexOfEndBracket < 6)
-                {
-                    text = $"{text.Substring(0, indexOfEndBracket + 1)}<{tag}>{text.Remove(0, indexOfEndBracket + 1)}</{tag}>";
-                }
-                else
-                {
-                    text = $"<{tag}>{text}</{tag}>";
-                }
+                text = text.StartsWith("{\\", StringComparison.Ordinal) && indexOfEndBracket > 1 && indexOfEndBracket < 6
+                    ? $"{text.Substring(0, indexOfEndBracket + 1)}<{tag}>{text.Remove(0, indexOfEndBracket + 1)}</{tag}>"
+                    : $"<{tag}>{text}</{tag}>";
             }
             return text;
         }

@@ -71,12 +71,7 @@ namespace XmlContentTranslator
 
         private int CompareResult(int result)
         {
-            if (SortDirection == SortOrder.Descending)
-            {
-                return -result;
-            }
-
-            return result;
+            return SortDirection == SortOrder.Descending ? -result : result;
         }
     }
 }
